@@ -2,8 +2,6 @@
 Extracting features for given word list.
 Need to specify the features for experiment.
 
-Expected input: cefr, noad wordlist
-
 @jychoi
 '''
 import syllables
@@ -102,17 +100,32 @@ class FeatureExtractor:
 
 
 if __name__ == "__main__":
-    with open('../data/wordlist/original_list_us_int.json', 'r') as f:
-        org_wordlist = json.load(f)
-        org_wordlist = org_wordlist.keys()
+    file_to_extract = '../data/wordlist/original_score.json'
 
-    df = pd.read_csv('../data/wordlist/noad_list.tsv', delimiter='\t')
-    df['word'] = df['word'].astype(str)
-    wordlist = [w.lower() for w in df['word']]
-    wordlist = [w for w in wordlist if w not in org_wordlist] # needs prediction
+    if 'original' in file_to_extract:
+        with open(file_to_extract, 'r') as f:
+            wordlist = json.load(f)
+            wordlist = wordlist.keys()
+
+    else:
+        with open('../data/wordlist/original_score.json', 'r') as f:
+            org_wordlist = json.load(f)
+            org_wordlist = org_wordlist.keys()
+
+        df = pd.read_csv(f'../data/wordlist/{file_to_extract}', delimiter='\t')
+        df['word'] = df['word'].astype(str)
+        wordlist = [w.lower() for w in df['word']]
+        wordlist = [w for w in wordlist if w not in org_wordlist] # needs prediction
 
     feature_extractor = FeatureExtractor(wordlist, FEATURE_DIR, FEATURES_TO_USE)
     feature_df = feature_extractor.make_dataframe()
 
-    output_fname = 'noad'
+    if 'original' in file_to_extract:
+        with open('../data/wordlist/original_score.json') as f:
+            score_dict = json.load(f)
+        
+        # map the word to score
+        feature_df['score'] = feature_df['word'].map(score_dict)
+
+    output_fname = 'original'
     feature_df.to_csv(os.path.join('../data/train', f'{output_fname}_features.csv'), index=False)
